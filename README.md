@@ -1,53 +1,55 @@
-🧠 Recipe Rating Prediction
+# Recipe Rating Prediction
 
+Predict the star rating (0–5) a user gave a recipe from their **review text**, **community signals** (thumbs up/down, reputation, best score) and **posting time**. This was the IIT Madras BS *Machine Learning Practice* Kaggle project.
 
-📌 Overview
+## Results
 
-This project develops a machine learning model that predicts recipe ratings based on user reviews and engagement metrics.
-It combines NLP for text reviews and structured feature engineering for numerical and categorical attributes.
+| Model | Val accuracy | Val macro-F1 |
+|---|---|---|
+RESULTS_ROWS
 
-🎯 Objective
+Validation = 20% stratified hold-out. Tuning used 3-fold CV on the training split only.
 
-To predict user ratings (1–5 scale) using review text and user behaviour data with advanced ensemble models.
+<p align="center"><img src="image/model_comparison.png" width="650" alt="Model comparison"></p>
 
-⚙️ Workflow
+**Read the baseline first.** 76% of reviews are 5-star, so always predicting 5 already scores 0.761 accuracy. That's why macro-F1, which weights all six classes equally, is reported alongside accuracy. The models mainly improve on the rare 0–4 star classes. Rating 0 means the user commented *without* leaving a rating.
 
-Data Preprocessing & EDA
+## Approach
 
-Missing value handling, outlier analysis, feature correlations.
+```
+raw CSV ──► add_features() ──► ColumnTransformer ───────────────────────► model
+             time features      numeric: impute → signed log1p → scale
+             vote features      categorical: one-hot (recipe, weekday, time of day)
+             text statistics    text: TF-IDF (1–2 grams, 20k terms, sublinear tf)
+```
 
-Feature Engineering
+- **Unstructured + structured data in one sklearn `Pipeline`.** Preprocessing is fit only on training folds, so there's no leakage into validation or CV. The matrix stays sparse the whole way (about 20k features).
+- **Missing data** (empty reviews) is kept and imputed, not dropped.
+- **Identifier columns are dropped**: `CommentID`, `UserID`, `UserName` and the numeric recipe codes. They only let a model memorise rows.
+- **Models:** Logistic Regression, KNN, Random Forest (bagging), LightGBM and XGBoost (boosting), each tuned with `RandomizedSearchCV`. They're combined in a **stacking ensemble** (LR + LightGBM + XGBoost + RF → logistic-regression meta-model on 5-fold out-of-fold probabilities).
 
-One-hot encoding, scaling, and TF-IDF vectorization for text.
+## Repository layout
 
-Model Building
+```
+data/                  train.csv, test.csv, sample.csv (submission format)
+src/features.py        feature engineering + preprocessing ColumnTransformer
+src/models.py          model definitions and the stacking ensemble
+src/train.py           end-to-end: compare → tune → stack → submission
+notebooks/             EDA and walkthrough (reads results produced by src/train.py)
+results/               model_comparison.csv, classification report, best params, submission.csv
+image/                 model comparison and confusion matrix plots
+```
 
-Logistic Regression, KNN, Random Forest, LightGBM, XGBoost, Bagging, and Stacking.
+## Run it
 
-Hyperparameter Tuning
+```bash
+pip install -r requirements.txt
+python -m src.train          # full run with tuning (~30–40 min on 4 CPUs)
+python -m src.train --fast   # no tuning (~10 min)
+jupyter notebook notebooks/recipe_rating_prediction.ipynb
+```
 
-Performed via RandomizedSearchCV for optimal performance.
-
-Evaluation
-
-Accuracy score and confusion matrix comparison across models.
-
-📊 Model Comparison
-<p align="center"> <img src="image/model_comparison.png" alt="Model Comparison" width="600"> </p>
-
-📈 Top Models: Stacking, LightGBM, XGBoost
-✅ Best Accuracy: 0.80004
-
-🧰 Tech Stack
-
-Languages: Python
-
-Libraries: pandas, numpy, scikit-learn, lightgbm, xgboost, matplotlib
-
-Concepts: NLP, TF-IDF, Model Stacking, Hyperparameter Tuning
-
-🚀 Future Scope
-
-Integrate deep learning models (LSTM/BERT) for richer text understanding
-
-Deploy via Flask for real-time rating prediction
+## Future work
+- Fine-tune a transformer (e.g. DistilBERT) or use sentence embeddings for the review text.
+- Use class weighting or threshold tuning if minority-class recall matters more than accuracy.
+- Model "no rating" (class 0) as a separate detection step.
