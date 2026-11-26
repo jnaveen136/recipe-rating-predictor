@@ -6,7 +6,16 @@ Predict the star rating (0–5) a user gave a recipe from their **review text**,
 
 | Model | Val accuracy | Val macro-F1 |
 |---|---|---|
-RESULTS_ROWS
+| **Stacking (LR+LGBM+XGB+RF)** | 0.7984 | 0.384 |
+| LightGBM (tuned) | 0.7903 | 0.328 |
+| XGBoost | 0.7900 | 0.354 |
+| LightGBM | 0.7889 | 0.356 |
+| Logistic Regression | 0.7841 | 0.356 |
+| Logistic Regression (tuned) | 0.7841 | 0.371 |
+| Random Forest | 0.7753 | 0.239 |
+| KNN | 0.7702 | 0.261 |
+| Baseline (always 5) | 0.7606 | 0.144 |
+| *Kaggle public leaderboard (stacking)* | *0.80004* | – |
 
 Validation = 20% stratified hold-out. Tuning used 3-fold CV on the training split only.
 
