@@ -1,0 +1,12 @@
+{
+  "logistic_regression": {
+    "C": 4.7253961499339185
+  },
+  "lightgbm": {
+    "colsample_bytree": 0.22020838819909644,
+    "learning_rate": 0.027386388058464273,
+    "min_child_samples": 20,
+    "n_estimators": 287,
+    "num_leaves": 50
+  }
+}
